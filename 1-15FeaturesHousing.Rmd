@@ -1,0 +1,257 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+ ---
+title: "DataCleaning_ATP Dataset_2012-01 to 2017-07_Int_V4"
+author: "Sicheng Chu"
+date: "September 30, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+packageList <- c('tidyr','dplyr','ggplot2','stringi','gmodels','readxl','plyr','plotly','reshape2','scales','formattable','sqldf')
+missPkg<-packageList[!(packageList %in% installed.packages()[,"Package"])]
+if (length(missPkg)) {
+  install.packages(missPkg)
+}
+lapply(packageList,require, character.only = TRUE)
+
+```
+```{r summary dataset}
+HouseCopy = read.csv("train.csv")
+House = read.csv("train.csv")
+House = data.frame(House)
+colnames(House)
+
+AlleyGrvl = which(House$Alley == "Grvl")
+AlleyPave = which(House$Alley == "Pave")
+
+# House$SaleCondition
+# hist(House$MoSold)
+
+# Summerhouse = subset(House,House$MoSold>=4 & House$MoSold<=7)
+# MonthPrice = lm(Summerhouse$SalePrice~Summerhouse$MoSold,data = Summerhouse)
+# summary(MonthPrice)
+# plot(MonthPrice)
+# residuals(MonthPrice)
+
+SelectedFeatures = select (House,MSZoning, LotShape, LandContour, Utilities, LandSlope	, Neighborhood	, Condition1	, Condition2	, BldgType	, HouseStyle	, OverallQual	, OverallCond	, YearBuilt	, YearRemodAdd	, RoofStyle, Exterior1st	, Exterior2nd	, MasVnrType	, MasVnrArea	, ExterQual	, ExterCond	, Foundation	, BsmtQual	, BsmtCond	, BsmtExposure	, BsmtFinType1	, BsmtFinSF1	, BsmtFinType2	, BsmtFinSF2	, BsmtUnfSF	, TotalBsmtSF	, Heating	, HeatingQC	, CentralAir, Electrical , GrLivArea	, BsmtFullBath	, BsmtHalfBath	, FullBath	, HalfBath	, BedroomAbvGr	, KitchenAbvGr , TotRmsAbvGrd	, Functional , GarageType	, GarageYrBlt	, GarageFinish	, GarageCars	, GarageArea	, GarageQual	, GarageCond , WoodDeckSF , OpenPorchSF	, EnclosedPorch	, X3SsnPorch	, ScreenPorch	, PoolArea	, PoolQC	, Fence , YrSold , SaleCondition, SalePrice)
+write.csv(SelectedFeatures,"./SelectedFeatures.csv",row.names = FALSE)
+```
+
+```{r Selected1-15}
+Selected15 = dplyr::select(House, Id, MSZoning, LotShape, LandContour, Utilities, LandSlope	, Neighborhood	, Condition1	, Condition2	, BldgType	, HouseStyle	, OverallQual	, OverallCond	, YearBuilt	, YearRemodAdd	, RoofStyle, SalePrice)
+Selected15 = data.frame(Selected15)
+logSalePrice = log(Selected15$SalePrice)
+Selected15$logSalePrice = logSalePrice
+write.csv(Selected15,"./SelectedF15.csv",row.names = FALSE)
+
+Selected15$OverallQual = as.factor(Selected15$OverallQual)
+Selected15$OverallCond = as.factor(Selected15$OverallCond)
+Selected15$YearBuilt = as.factor(Selected15$YearBuilt)
+Selected15$YearRemodAdd = as.factor(Selected15$YearRemodAdd)
+```
+
+```{r regressionMod}
+#treat YearBuilt,YearRemodAdd as factor
+mod1 <- lm(logSalePrice ~.-Id-SalePrice,data = Selected15)
+
+summary(mod1)
+
+Selected15$YearBuilt = as.numeric(Selected15$YearBuilt)
+Selected15$YearRemodAdd = as.numeric(Selected15$YearRemodAdd)
+mod2 <- lm(logSalePrice ~.-Id -SalePrice,data = Selected15)
+summary(mod2)
+```
+
+```{r position of count and mean in boxPlot}
+give.n <- function(x){
+  return(c(y = median(x)*1.01, label = length(x))) 
+  # experiment with the multiplier to find the perfect position
+}
+
+# function for mean labels
+mean.n <- function(x){
+  return(c(y = median(x)*0.99, label = round(mean(x),2))) 
+  # experiment with the multiplier to find the perfect position
+}
+```
+
+```{r boxPlot}
+#MSZoning
+ggplot(Selected15, aes(factor(MSZoning), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#LotShape
+ggplot(Selected15, aes(factor(LotShape), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#LandContour
+ggplot(Selected15, aes(factor(LandContour), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#Utilities
+ggplot(Selected15, aes(factor(Utilities), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#LandSlope
+ggplot(Selected15, aes(factor(LandSlope), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#Neighborhood
+ggplot(Selected15, aes(factor(Neighborhood), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#Condition1
+ggplot(Selected15, aes(factor(Condition1), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#Condition2
+ggplot(Selected15, aes(factor(Condition2), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#BldgType
+ggplot(Selected15, aes(factor(BldgType), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#HouseStyle
+ggplot(Selected15, aes(factor(HouseStyle), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#OverallQual
+ggplot(Selected15, aes(factor(OverallQual), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#OverallCond
+ggplot(Selected15, aes(factor(OverallCond), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#YearBuilt: Too much levels (112), exe with caution
+ggplot(Selected15, aes(factor(YearBuilt), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#YearRemodAdd: Too much levels (61), exe with caution
+ggplot(Selected15, aes(factor(YearRemodAdd), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+
+#RoofStyle:
+ggplot(Selected15, aes(factor(RoofStyle), logSalePrice )) + 
+      geom_boxplot() +
+      stat_summary(fun.data = give.n, geom = "text", fun.y = median) +
+  stat_summary(fun.data = mean.n, geom = "text", fun.y = mean, colour = "red")
+```
+
+```{r Coor check and anv}
+# aov1 = aov(Selected15$logSalePrice ~ Selected15$RoofStyle)
+# summarY(aov1)
+# 
+# correlate(Selected15)
+```
+
+```{R backward selection w/ cv}
+library(dplyr)
+#Ref: https://stackoverflow.com/questions/9167452/sort-xtable-output-by-p-value-from-glm-model-summary
+# 1. chi-sq test
+# 2. add interaction to lm
+# 3. detect non-linearity
+# 3. add power term to lm
+# 4. diagnostics
+
+library(xtable)
+idx <- order(coef(summary(mod1))[,4])  # sort out the p-values
+out <- coef(summary(mod1))[idx,]       # reorder coef, SE, etc. by increasing p
+out
+
+idx2 <- order(coef(summary(mod2))[,4])  # sort out the p-values
+out2 <- coef(summary(mod2))[idx,]       # reorder coef, SE, etc. by increasing p
+out
+
+
+catego <- dplyr::select(Selected15,-Id,-SalePrice,-logSalePrice)
+#chisq.test(catego)
+
+# BldgType ~HouseStyle
+# Condition1~Condition2
+# LandContour~LandSlope~LotShape
+# OverallQual~OverallCond
+# YearBuilt~YearRemodAdd
+# RoofStyle~?
+```
+
+```{r Chisq test for each pair}
+#Ref: https://stackoverflow.com/questions/7382039/chi-square-analysis-using-for-loop-in-r
+#Chisq test for each pair:
+library(plyr)
+
+combos <- combn(ncol(catego),2)
+
+ChiSqEachPair = adply(combos, 2, function(x) {
+  test <- chisq.test(catego[, x[1]], catego[, x[2]])
+
+  out <- data.frame("Row" = colnames(catego)[x[1]]
+                    , "Column" = colnames(catego[x[2]])
+                    , "Chi.Square" = round(test$statistic,3)
+                    ,  "df"= test$parameter
+                    ,  "p.value" = round(test$p.value, 3)
+                    )
+  return(out)
+
+})  
+
+View(ChiSqEachPair)
+
+DependCatego = subset(ChiSqEachPair,p.value>0.05)
+View(DependCatego)
+
+colDependCatego <- subset(DependCatego, select = c(Row, Column))
+View(colDependCatego)
+```
+
+```{r Add interaction term}
+#May suffer from curse of dimentioanility, please add additional randomized sample to increase sample size.
+
+
+
+mod1Non <- lm(logSalePrice ~ +RoofStyle)
+#mod1Interaction <- lm(logSalePrice ~ . +Utilities*BldgType+Utilities*OverallQual+Utilities*OverallCond+Utilities*YearBuilt+Utilities*RoofStyle+LandSlope*Condition1+LandSlope*Condition2+LandSlope*BldgType+LandSlope*HouseStyle+Neighborhood*Condition2+Condition2*YearRemodAdd+OverallCond*RoofStyle -Id -SalePrice,data = Selected15)
+
+sumMod1Interaction = summary(mod1Interaction)
+
+library(xtable)
+idxInteraction <- order(coef(summary(mod1Interaction))[,4])  # sort out the p-values
+outInteraction <- coef(summary(mod1Interaction))[idxInteraction,]       # reorder coef, SE, etc. by increasing p
+outInteraction
+
+```
